@@ -11,12 +11,12 @@ class Client:
     """Dataclass representing a client record."""
 
     id: str
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    sex: Optional[str] = None
-    birthdate: Optional[date] = None
-    height_cm: Optional[float] = None
-    weight_kg: Optional[float] = None
+    first_name: str
+    last_name: str
+    sex: str
+    birthdate: date
+    height_cm: float
+    weight_kg: float
     objective: Optional[str] = None
     injuries: Optional[str] = None
     email: Optional[str] = None

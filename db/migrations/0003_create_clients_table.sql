@@ -5,12 +5,12 @@ DROP TABLE IF EXISTS clients;
 
 CREATE TABLE clients (
     id TEXT PRIMARY KEY,
-    first_name TEXT,
-    last_name TEXT,
-    sex TEXT CHECK (sex IN ('Homme','Femme','Autre')),
-    birthdate DATE,
-    height_cm REAL CHECK (height_cm > 0),
-    weight_kg REAL CHECK (weight_kg > 0),
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    sex TEXT NOT NULL CHECK (sex IN ('Homme','Femme','Autre')),
+    birthdate DATE NOT NULL,
+    height_cm REAL NOT NULL CHECK (height_cm > 0),
+    weight_kg REAL NOT NULL CHECK (weight_kg > 0),
     objective TEXT,
     injuries TEXT,
     email TEXT,

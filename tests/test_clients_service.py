@@ -17,10 +17,10 @@ def valid_data():
         "last_name": "Doe",
         "sex": "Femme",
         "birthdate": date(1995, 5, 20),
-        "email": "jane@example.com",
-        "phone": "555",
         "height_cm": 170.0,
         "weight_kg": 60.0,
+        "email": "jane@example.com",
+        "phone": "555",
     }
 
 
@@ -37,7 +37,9 @@ def test_create_update_delete():
     repo.update.assert_called()
     repo.get.return_value = client
     service.delete(client.id)
-    repo.update.assert_called()
+    anon_client = repo.update.call_args[0][0]
+    assert anon_client.first_name == "Anonyme"
+    assert anon_client.email is None
     repo.delete.assert_called_once_with(client.id)
 
 
@@ -49,6 +51,8 @@ def test_create_duplicate():
         last_name="Doe",
         sex="Femme",
         birthdate=date(1995, 5, 20),
+        height_cm=170.0,
+        weight_kg=60.0,
         email="jane@example.com",
         phone="555",
     )
@@ -69,6 +73,8 @@ def test_update_errors():
         last_name="Doe",
         sex="Homme",
         birthdate=date(1990, 1, 1),
+        height_cm=180.0,
+        weight_kg=80.0,
         email="john@example.com",
         phone="111",
     )
@@ -79,6 +85,8 @@ def test_update_errors():
         last_name="Doe",
         sex="Femme",
         birthdate=date(1990, 1, 1),
+        height_cm=165.0,
+        weight_kg=60.0,
         email="jane@example.com",
         phone="222",
     )
@@ -90,23 +98,38 @@ def test_validation_errors():
     repo = MagicMock()
     repo.get_by_identity.return_value = None
     service = ClientsService(repo)
-    bad = valid_data()
-    bad["sex"] = "X"
+    bad = valid_data(); bad["sex"] = "X"; 
     with pytest.raises(ValueError):
         service.create(bad)
-    bad = valid_data()
-    bad["birthdate"] = date.today() + timedelta(days=1)
+    bad = valid_data(); bad["birthdate"] = date.today() + timedelta(days=1)
     with pytest.raises(ValueError):
         service.create(bad)
-    bad = valid_data()
-    bad["email"] = ""
+    bad = valid_data(); del bad["first_name"]
     with pytest.raises(ValueError):
         service.create(bad)
-    bad = valid_data()
-    bad["height_cm"] = -1
+    bad = valid_data(); bad["height_cm"] = -1
     with pytest.raises(ValueError):
         service.create(bad)
-    bad = valid_data()
-    bad["weight_kg"] = 0
+    bad = valid_data(); del bad["weight_kg"]
     with pytest.raises(ValueError):
         service.create(bad)
+
+
+def test_create_without_contact_info():
+    repo = MagicMock()
+    repo.get_by_identity.return_value = None
+    service = ClientsService(repo)
+    data = valid_data()
+    del data["email"]
+    del data["phone"]
+    client = service.create(data)
+    assert client.email is None
+    repo.add.assert_called_once()
+
+
+def test_delete_missing_client():
+    repo = MagicMock()
+    repo.get.return_value = None
+    service = ClientsService(repo)
+    with pytest.raises(ValueError):
+        service.delete("missing")

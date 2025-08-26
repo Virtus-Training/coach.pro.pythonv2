@@ -29,12 +29,12 @@ class ClientsService:
             last_name=data["last_name"],
             sex=data["sex"],
             birthdate=data["birthdate"],
-            height_cm=data.get("height_cm"),
-            weight_kg=data.get("weight_kg"),
+            height_cm=data["height_cm"],
+            weight_kg=data["weight_kg"],
             objective=data.get("objective"),
             injuries=data.get("injuries"),
-            email=data["email"],
-            phone=data["phone"],
+            email=data.get("email"),
+            phone=data.get("phone"),
         )
         self.repo.add(client)
         return client
@@ -64,12 +64,12 @@ class ClientsService:
             last_name=merged["last_name"],
             sex=merged["sex"],
             birthdate=merged["birthdate"],
-            height_cm=merged.get("height_cm"),
-            weight_kg=merged.get("weight_kg"),
+            height_cm=merged["height_cm"],
+            weight_kg=merged["weight_kg"],
             objective=merged.get("objective"),
             injuries=merged.get("injuries"),
-            email=merged["email"],
-            phone=merged["phone"],
+            email=merged.get("email"),
+            phone=merged.get("phone"),
             created_at=existing.created_at,
         )
         self.repo.update(updated)
@@ -84,8 +84,8 @@ class ClientsService:
             raise ValueError("Client not found")
         anonymized = Client(
             id=client.id,
-            first_name=None,
-            last_name=None,
+            first_name="Anonyme",
+            last_name="Anonyme",
             sex=client.sex,
             birthdate=client.birthdate,
             height_cm=client.height_cm,
@@ -101,8 +101,9 @@ class ClientsService:
 
     # ------------------------------------------------------------------
     def _validate(self, data: Dict[str, object]) -> None:
-        for field in ["first_name", "last_name", "sex", "birthdate", "email", "phone"]:
-            if not data.get(field):
+        for field in ["first_name", "last_name", "sex", "birthdate", "height_cm", "weight_kg"]:
+            value = data.get(field)
+            if value is None or value == "":
                 raise ValueError(f"{field} is required")
         if data["sex"] not in ALLOWED_SEX:
             raise ValueError("Invalid sex")
@@ -111,11 +112,9 @@ class ClientsService:
             raise ValueError("birthdate must be a date")
         if birthdate > date.today():
             raise ValueError("birthdate cannot be in the future")
-        height = data.get("height_cm")
-        if height is not None and float(height) <= 0:
+        if float(data["height_cm"]) <= 0:
             raise ValueError("height_cm must be positive")
-        weight = data.get("weight_kg")
-        if weight is not None and float(weight) <= 0:
+        if float(data["weight_kg"]) <= 0:
             raise ValueError("weight_kg must be positive")
 
 
