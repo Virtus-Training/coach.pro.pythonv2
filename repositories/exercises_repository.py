@@ -4,9 +4,18 @@ from __future__ import annotations
 import json
 import sqlite3
 import time
+import unicodedata
 from typing import Any, List, Optional
 
 from models.exercise import Exercise
+from config.enums import (
+    PRIMARY_MUSCLE_LABELS,
+    PRIMARY_MUSCLE_CODES,
+    EQUIPMENT_LABELS,
+    EQUIPMENT_CODES,
+    PATTERN_LABELS,
+    PATTERN_CODES,
+)
 
 
 class ExercisesRepository:
@@ -14,20 +23,24 @@ class ExercisesRepository:
 
     def __init__(self, conn: sqlite3.Connection) -> None:
         self.conn = conn
+        self.conn.create_function("normalize", 1, self._normalize)
 
     # --- helpers -------------------------------------------------
     def _row_to_exercise(self, row: sqlite3.Row | None) -> Optional[Exercise]:
         if row is None:
             return None
-        secondary = json.loads(row[4]) if row[4] else []
+        secondary = [
+            PRIMARY_MUSCLE_CODES.get(m, m)
+            for m in (json.loads(row[4]) if row[4] else [])
+        ]
         return Exercise(
             id=row[0],
             name=row[1],
             slug=row[2],
-            primary_muscle=row[3],
+            primary_muscle=PRIMARY_MUSCLE_CODES.get(row[3], row[3]),
             secondary_muscles=secondary,
-            equipment=row[5],
-            pattern=row[6],
+            equipment=EQUIPMENT_CODES.get(row[5], row[5]) if row[5] else None,
+            pattern=PATTERN_CODES.get(row[6], row[6]) if row[6] else None,
             difficulty=row[7],
             tempo=row[8],
             rep_range=row[9],
@@ -47,10 +60,14 @@ class ExercisesRepository:
             exercise.id,
             exercise.name,
             exercise.slug,
-            exercise.primary_muscle,
-            json.dumps(exercise.secondary_muscles) if exercise.secondary_muscles else None,
-            exercise.equipment,
-            exercise.pattern,
+            PRIMARY_MUSCLE_LABELS.get(exercise.primary_muscle),
+            json.dumps([
+                PRIMARY_MUSCLE_LABELS.get(m) for m in exercise.secondary_muscles
+            ])
+            if exercise.secondary_muscles
+            else None,
+            EQUIPMENT_LABELS.get(exercise.equipment) if exercise.equipment else None,
+            PATTERN_LABELS.get(exercise.pattern) if exercise.pattern else None,
             exercise.difficulty,
             exercise.tempo,
             exercise.rep_range,
@@ -100,10 +117,10 @@ class ExercisesRepository:
             params.append(f"%{name}%")
         if primary_muscle:
             query += " AND primary_muscle = ?"
-            params.append(primary_muscle)
+            params.append(PRIMARY_MUSCLE_LABELS.get(primary_muscle, primary_muscle))
         if equipment:
             query += " AND equipment = ?"
-            params.append(equipment)
+            params.append(EQUIPMENT_LABELS.get(equipment, equipment))
         rows = self.conn.execute(query, params).fetchall()
         return [self._row_to_exercise(row) for row in rows if row]
 
@@ -112,10 +129,14 @@ class ExercisesRepository:
         data = (
             exercise.name,
             exercise.slug,
-            exercise.primary_muscle,
-            json.dumps(exercise.secondary_muscles) if exercise.secondary_muscles else None,
-            exercise.equipment,
-            exercise.pattern,
+            PRIMARY_MUSCLE_LABELS.get(exercise.primary_muscle),
+            json.dumps([
+                PRIMARY_MUSCLE_LABELS.get(m) for m in exercise.secondary_muscles
+            ])
+            if exercise.secondary_muscles
+            else None,
+            EQUIPMENT_LABELS.get(exercise.equipment) if exercise.equipment else None,
+            PATTERN_LABELS.get(exercise.pattern) if exercise.pattern else None,
             exercise.difficulty,
             exercise.tempo,
             exercise.rep_range,
@@ -153,6 +174,55 @@ class ExercisesRepository:
             (exercise_id,),
         ).fetchone()
         return row is not None
+
+    # --- search --------------------------------------------------
+    def search(
+        self,
+        *,
+        query: str = "",
+        primary_muscles: List[str] | None = None,
+        equipment: List[str] | None = None,
+        patterns: List[str] | None = None,
+        difficulty: tuple[int, int] | None = None,
+        include_inactive: bool = False,
+    ) -> List[Exercise]:
+        sql = "SELECT * FROM exercises WHERE 1=1"
+        params: List[Any] = []
+        if query:
+            q = f"%{self._normalize(query)}%"
+            sql += " AND (normalize(name) LIKE ? OR normalize(cues) LIKE ?)"
+            params.extend([q, q])
+        if primary_muscles:
+            placeholders = ",".join("?" * len(primary_muscles))
+            sql += f" AND primary_muscle IN ({placeholders})"
+            params.extend([PRIMARY_MUSCLE_LABELS[m] for m in primary_muscles])
+        if equipment:
+            placeholders = ",".join("?" * len(equipment))
+            sql += f" AND equipment IN ({placeholders})"
+            params.extend([EQUIPMENT_LABELS[e] for e in equipment])
+        if patterns:
+            placeholders = ",".join("?" * len(patterns))
+            sql += f" AND pattern IN ({placeholders})"
+            params.extend([PATTERN_LABELS[p] for p in patterns])
+        if difficulty:
+            sql += " AND difficulty BETWEEN ? AND ?"
+            params.extend([difficulty[0], difficulty[1]])
+        if not include_inactive:
+            sql += " AND is_active = 1"
+        rows = self.conn.execute(sql, params).fetchall()
+        return [self._row_to_exercise(r) for r in rows if r]
+
+    # helper normalization
+    @staticmethod
+    def _normalize(text: str | None) -> str:
+        if not text:
+            return ""
+        return (
+            unicodedata.normalize("NFKD", text)
+            .encode("ascii", "ignore")
+            .decode("ascii")
+            .lower()
+        )
 
 
 __all__ = ["ExercisesRepository"]

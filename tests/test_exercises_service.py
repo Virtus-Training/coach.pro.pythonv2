@@ -13,10 +13,10 @@ from services.exercises_service import ExercisesService
 def valid_data():
     return {
         'name': 'Développé couché',
-        'primary_muscle': 'Pectoraux',
-        'secondary_muscles': ['Triceps'],
-        'equipment': 'Barre',
-        'pattern': 'Push horizontal',
+        'primary_muscle': 'PECTORAUX',
+        'secondary_muscles': ['TRICEPS'],
+        'equipment': 'BAR',
+        'pattern': 'PH',
         'difficulty': 3,
         'rpe_default': 7.5,
         'rest_s_default': 120,
@@ -34,7 +34,7 @@ def test_create_success_and_slug():
 
 def test_create_duplicate_name():
     repo = MagicMock()
-    repo.get_by_name.return_value = Exercise(id='1', name='x', slug='x', primary_muscle='Pectoraux')
+    repo.get_by_name.return_value = Exercise(id='1', name='x', slug='x', primary_muscle='PECTORAUX')
     service = ExercisesService(repo)
     with pytest.raises(ValueError):
         service.create(valid_data())
@@ -49,15 +49,15 @@ def test_validation_errors():
     with pytest.raises(ValueError):
         service.create(bad)
     bad = valid_data()
-    bad['primary_muscle'] = 'Invalide'
+    bad['primary_muscle'] = 'INVALID'
     with pytest.raises(ValueError):
         service.create(bad)
     bad = valid_data()
-    bad['equipment'] = 'Invalide'
+    bad['equipment'] = 'INVALID'
     with pytest.raises(ValueError):
         service.create(bad)
     bad = valid_data()
-    bad['pattern'] = 'Invalid'
+    bad['pattern'] = 'INVALID'
     with pytest.raises(ValueError):
         service.create(bad)
     bad = valid_data()
@@ -69,21 +69,21 @@ def test_validation_errors():
     with pytest.raises(ValueError):
         service.create(bad)
     bad = valid_data()
-    bad['secondary_muscles'] = 'Triceps'
+    bad['secondary_muscles'] = 'TRICEPS'
     with pytest.raises(ValueError):
         service.create(bad)
 
 
 def test_update_and_soft_delete():
     repo = MagicMock()
-    existing = Exercise(id='1', name='Old', slug='old', primary_muscle='Pectoraux')
+    existing = Exercise(id='1', name='Old', slug='old', primary_muscle='PECTORAUX')
     repo.get_by_id.side_effect = [existing, existing, None]
     repo.get_by_name.return_value = None
     service = ExercisesService(repo)
     updated = service.update('1', {'name': 'Nouveau', 'difficulty': 4})
     assert updated.name == 'Nouveau'
     repo.update.assert_called_once()
-    repo.get_by_name.return_value = Exercise(id='2', name='Nouveau', slug='n', primary_muscle='Pectoraux')
+    repo.get_by_name.return_value = Exercise(id='2', name='Nouveau', slug='n', primary_muscle='PECTORAUX')
     with pytest.raises(ValueError):
         service.update('1', {'name': 'Nouveau'})
     with pytest.raises(ValueError):
