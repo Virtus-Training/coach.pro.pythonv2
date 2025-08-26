@@ -8,22 +8,15 @@ from typing import Dict, List, Optional
 
 from models.exercise import Exercise
 from repositories.exercises_repository import ExercisesRepository
+from config.enums import (
+    PRIMARY_MUSCLE_LABELS,
+    EQUIPMENT_LABELS,
+    PATTERN_LABELS,
+)
 
-PRIMARY_MUSCLES = {
-    'Pectoraux','Dorsaux','Épaules','Biceps','Triceps','Trapèzes','Lombaires',
-    'Abdominaux','Obliques','Quadriceps','Ischio-jambiers','Fessiers','Mollets',
-    'Avant-bras','Cou','Corps entier'
-}
-EQUIPMENTS = {
-    'Barre','Haltères','Kettlebell','Poulie/Câble','Machine guidée','Smith',
-    'Élastiques','TRX/Anneaux','Poids du corps','Banc/Step/Box','Swiss Ball',
-    'Médecine ball','Sled/Prowler'
-}
-PATTERNS = {
-    'Squat','Hinge','Fente','Push horizontal','Push vertical','Tirage horizontal',
-    'Tirage vertical','Gainage','Anti-rotation','Rotation','Locomotion/Carry',
-    'Saut/Pliométrie','Conditioning','Mobilité'
-}
+PRIMARY_MUSCLES = set(PRIMARY_MUSCLE_LABELS.keys())
+EQUIPMENTS = set(EQUIPMENT_LABELS.keys())
+PATTERNS = set(PATTERN_LABELS.keys())
 
 
 class ExercisesService:
@@ -95,6 +88,26 @@ class ExercisesService:
             name=filters.get('name'),
             primary_muscle=filters.get('primary_muscle'),
             equipment=filters.get('equipment'),
+        )
+
+    def search(
+        self,
+        query: str = "",
+        *,
+        primary_muscles: Optional[List[str]] = None,
+        equipment: Optional[List[str]] = None,
+        patterns: Optional[List[str]] = None,
+        difficulty: tuple[int, int] | None = None,
+        include_inactive: bool = False,
+    ) -> List[Exercise]:
+        """Search exercises using query and filters."""
+        return self.repo.search(
+            query=query,
+            primary_muscles=primary_muscles or [],
+            equipment=equipment or [],
+            patterns=patterns or [],
+            difficulty=difficulty,
+            include_inactive=include_inactive,
         )
 
     def soft_delete(self, exercise_id: str) -> None:

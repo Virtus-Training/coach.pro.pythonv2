@@ -19,7 +19,7 @@ def setup_db() -> sqlite3.Connection:
 def test_create_and_get_by_id():
     conn = setup_db()
     repo = ExercisesRepository(conn)
-    ex = Exercise(id=str(uuid.uuid4()), name="Pompe", slug="pompe", primary_muscle="Pectoraux")
+    ex = Exercise(id=str(uuid.uuid4()), name="Pompe", slug="pompe", primary_muscle="PECTORAUX")
     repo.create(ex)
     fetched = repo.get_by_id(ex.id)
     assert fetched is not None
@@ -30,12 +30,18 @@ def test_create_and_get_by_id():
 def test_list_and_update_and_soft_delete():
     conn = setup_db()
     repo = ExercisesRepository(conn)
-    ex1 = Exercise(id="1", name="Squat", slug="squat", primary_muscle="Quadriceps", equipment="Barre")
-    ex2 = Exercise(id="2", name="Traction", slug="traction", primary_muscle="Dorsaux", equipment="Poids du corps")
+    ex1 = Exercise(id="1", name="Squat", slug="squat", primary_muscle="QUADRICEPS", equipment="BAR")
+    ex2 = Exercise(
+        id="2",
+        name="Traction",
+        slug="traction",
+        primary_muscle="DORSAUX",
+        equipment="BW",
+    )
     repo.create(ex1)
     repo.create(ex2)
     # list filter
-    res = repo.list_all(name="Squat", primary_muscle="Quadriceps", equipment="Barre")
+    res = repo.list_all(name="Squat", primary_muscle="QUADRICEPS", equipment="BAR")
     assert len(res) == 1 and res[0].id == "1"
     assert repo.get_by_name("Traction").id == "2"
     # update
@@ -52,7 +58,7 @@ def test_is_used_in_session():
     conn = setup_db()
     repo = ExercisesRepository(conn)
     ex_id = "ex-1"
-    ex = Exercise(id=ex_id, name="Crunch", slug="crunch", primary_muscle="Abdominaux")
+    ex = Exercise(id=ex_id, name="Crunch", slug="crunch", primary_muscle="ABDOMINAUX")
     repo.create(ex)
     conn.execute(
         "INSERT INTO session_exercises (session_id, exercise_id, sets, repetitions) VALUES (1, ?, 3, 10)",

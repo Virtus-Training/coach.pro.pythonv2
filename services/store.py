@@ -1,16 +1,38 @@
 """Global observable store for application state."""
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from typing import Callable, Generic, List, TypeVar
 
 T = TypeVar("T")
 
 
 @dataclass(frozen=True)
+class ExerciseFilters:
+    """Filters applied to exercise listings."""
+
+    primary_muscles: List[str] = field(default_factory=list)
+    equipment: List[str] = field(default_factory=list)
+    patterns: List[str] = field(default_factory=list)
+    difficulty_min: int = 1
+    difficulty_max: int = 5
+
+
+@dataclass(frozen=True)
+class ExercisesState:
+    """State related to exercises catalogue."""
+
+    search_query: str = ""
+    active_filters: ExerciseFilters = field(default_factory=ExerciseFilters)
+    include_inactive: bool = False
+
+
+@dataclass(frozen=True)
 class AppState:
     """Immutable application state."""
+
     route: str = "home"
+    exercises: ExercisesState = field(default_factory=ExercisesState)
 
 
 class Store(Generic[T]):
