@@ -27,6 +27,8 @@ def test_crud_and_on_delete_set_null():
         last_name="Doe",
         sex="Homme",
         birthdate=date(1990, 1, 1),
+        height_cm=180.0,
+        weight_kg=80.0,
         email="john@example.com",
         phone="123",
     )
@@ -36,13 +38,26 @@ def test_crud_and_on_delete_set_null():
         last_name="Doe",
         sex="Femme",
         birthdate=date(1992, 2, 2),
+        height_cm=165.0,
+        weight_kg=60.0,
         email="jane@example.com",
         phone="456",
     )
+    c3 = Client(
+        id=str(uuid.uuid4()),
+        first_name="Alex",
+        last_name="NoMail",
+        sex="Autre",
+        birthdate=date(2000, 3, 3),
+        height_cm=170.0,
+        weight_kg=70.0,
+    )
     repo.add(c1)
     repo.add(c2)
+    repo.add(c3)
     assert repo.get(c1.id).first_name == "John"
-    assert len(repo.list_all()) == 2
+    assert repo.get(c3.id).email is None
+    assert len(repo.list_all()) == 3
     c1.first_name = "Johnny"
     repo.update(c1)
     assert repo.get(c1.id).first_name == "Johnny"
@@ -59,6 +74,8 @@ def test_crud_and_on_delete_set_null():
         last_name="Doe",
         sex="Femme",
         birthdate=date(1992, 2, 2),
+        height_cm=165.0,
+        weight_kg=60.0,
         email="other@example.com",
         phone="789",
     )

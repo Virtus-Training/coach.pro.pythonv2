@@ -19,7 +19,7 @@ class ClientsRepository:
     def _row_to_client(self, row: sqlite3.Row | None) -> Optional[Client]:
         if row is None:
             return None
-        birth = date.fromisoformat(row[4]) if row[4] else None
+        birth = date.fromisoformat(row[4])
         return Client(
             id=row[0],
             first_name=row[1],
@@ -44,7 +44,7 @@ class ClientsRepository:
             client.first_name,
             client.last_name,
             client.sex,
-            client.birthdate.isoformat() if client.birthdate else None,
+            client.birthdate.isoformat(),
             client.height_cm,
             client.weight_kg,
             client.objective,
@@ -91,7 +91,7 @@ class ClientsRepository:
             client.first_name,
             client.last_name,
             client.sex,
-            client.birthdate.isoformat() if client.birthdate else None,
+            client.birthdate.isoformat(),
             client.height_cm,
             client.weight_kg,
             client.objective,
